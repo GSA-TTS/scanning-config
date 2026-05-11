@@ -36,6 +36,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ORG: ${{ github.repository_owner }}
+          STEPS_REPO_LIST_OUTPUTS_REPOS: ${{ steps.repo-list.outputs.repos }}
         run: |
           set -euo pipefail
 
@@ -44,7 +45,7 @@ jobs:
           echo "" >> metrics.md
 
           # Repo list is single-sourced from .github/repos.txt
-          REPOS="${{ steps.repo-list.outputs.repos }}"
+          REPOS="${STEPS_REPO_LIST_OUTPUTS_REPOS}"
           TOTAL_REPOS=$(echo $REPOS | wc -w | tr -d ' ')
           echo "Checking ${TOTAL_REPOS} repos..."
 
@@ -140,6 +141,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ORG: ${{ github.repository_owner }}
+          STEPS_REPO_LIST_OUTPUTS_REPOS: ${{ steps.repo-list.outputs.repos }}
         run: |
           set -euo pipefail
 
@@ -148,7 +150,7 @@ jobs:
           echo "" >> pinning-audit.md
 
           # Repo list is single-sourced from .github/repos.txt
-          REPOS="${{ steps.repo-list.outputs.repos }}"
+          REPOS="${STEPS_REPO_LIST_OUTPUTS_REPOS}"
 
           CLEAN=0
           ISSUES=0

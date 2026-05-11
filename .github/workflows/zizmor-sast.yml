@@ -50,6 +50,7 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
           ZIZMOR_GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NO_COLOR: "1"
+          STEPS_REPO_LIST_OUTPUTS_REPOS: ${{ steps.repo-list.outputs.repos }}
         run: |
           set -euo pipefail
 
@@ -62,7 +63,7 @@ jobs:
           printf 'rules:\n  unpinned-uses:\n    disable: true\n' > /tmp/zizmor.yml
 
           # Repo list is single-sourced from .github/repos.txt
-          REPOS="${{ steps.repo-list.outputs.repos }}"
+          REPOS="${STEPS_REPO_LIST_OUTPUTS_REPOS}"
 
           SCANNED=0
           CLEAN=0

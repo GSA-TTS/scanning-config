@@ -54,6 +54,7 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ORG: ${{ github.repository_owner }}
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          STEPS_REPO_LIST_OUTPUTS_REPOS: ${{ steps.repo-list.outputs.repos }}
         run: |
           set -euo pipefail
 
@@ -63,7 +64,7 @@ jobs:
           CONFIG="${GITHUB_WORKSPACE}/.gitleaks.toml"
 
           # Repo list is single-sourced from .github/repos.txt
-          REPOS="${{ steps.repo-list.outputs.repos }}"
+          REPOS="${STEPS_REPO_LIST_OUTPUTS_REPOS}"
 
           SCANNED=0
           CLEAN=0
