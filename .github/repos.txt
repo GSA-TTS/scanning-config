@@ -1,7 +1,17 @@
+# Physician, heal thyself!
 GSA-TTS/scanning-service
+
+# Permitting team (Olympic) repos
 GSA-TTS/pic-blm-cxworks
+GSA-TTS/pic-ce-data
+GSA-TTS/pic-ce-explorer
+GSA-TTS/pic-site
+GSA-TTS/pic-team
 GSA-TTS/spiff-arena
 GSA-TTS/spiffworkflow-connector
+
+# cg-contributors repos
 GSA-TTS/terraform-cloudgov
-GSA-TTS/pic-ce-explorer
+
+# search.gov team repos
 GSA-TTS/searchgov-spider
