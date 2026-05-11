@@ -101,7 +101,7 @@ jobs:
             # Merge repo-local allowlist into org config if present
             SCAN_CONFIG="$CONFIG"
             if [ -f "$WORKDIR/.gitleaks.toml" ]; then
-              python3 "${GITHUB_WORKSPACE}/scanning-service/bin/merge-gitleaks-config" \
+              python3 "${GITHUB_WORKSPACE}/bin/merge-gitleaks-config" \
                 "$CONFIG" "$WORKDIR/.gitleaks.toml" /tmp/gitleaks-merged.toml
               SCAN_CONFIG="/tmp/gitleaks-merged.toml"
             fi
