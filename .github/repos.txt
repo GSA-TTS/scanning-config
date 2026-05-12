@@ -16,5 +16,5 @@ GSA-TTS/terraform-cloudgov
 # search.gov team repos
 GSA-TTS/searchgov-spider
 
-# Data Fabric
+# Federal Procurement Data Fabric (FPDF)
 GSA-TTS/TTSE-petrified-forest-pipeline
