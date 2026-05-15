@@ -34,6 +34,13 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: false
 
+      - name: Checkout signed-commit action
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          sparse-checkout: .github/actions/signed-commit
+          path: _scanning-service
+          persist-credentials: false
+
       - name: Download latest component definition
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -56,30 +63,31 @@ jobs:
             "https://api.github.com/repos/${{ github.repository }}/contents/docs/compliance/component-definitions/org-dependency-management/component-definition.json?ref=${TAG}" \
             | jq -r '.content' | base64 -d > "${COMP_DIR}/component-definition.json"
 
-      - name: Create update PR
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes to component definition. Skipping PR."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create signed commit
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: ./_scanning-service/.github/actions/signed-commit
+        with:
+          repository: ${{ matrix.consumer }}
+          branch: chore/update-org-dependency-management-${{ github.event.release.tag_name }}
+          commit-message: "chore: update org-dependency-management component definition to ${{ github.event.release.tag_name }}"
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Create PR
+        if: steps.changes.outputs.has_changes == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           TAG: ${{ github.event.release.tag_name }}
-          CONSUMER: ${{ matrix.consumer }}
         run: |
-          set -euo pipefail
-
-          BRANCH="chore/update-org-dependency-management-${TAG}"
-
-          # Check if there are changes
-          if git diff --quiet; then
-            echo "No changes to component definition. Skipping PR."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
-          git add -A
-          git commit -m "chore: update org-dependency-management component definition to ${TAG}"
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${CONSUMER}.git"
-          git push origin "$BRANCH"
-
           gh pr create \
             --title "chore: update org-dependency-management OSCAL component to ${TAG}" \
             --body "Updates the org-dependency-management component definition to [${TAG}](https://github.com/${{ github.repository }}/releases/tag/${TAG}).
@@ -87,5 +95,5 @@ jobs:
           This is an automated PR from the [scanning-service OSCAL update workflow](https://github.com/${{ github.repository }}/actions/workflows/oscal-update-consumers.yml).
 
           Review the [release notes](https://github.com/${{ github.repository }}/releases/tag/${TAG}) for details on control statement changes." \
-            --head "$BRANCH" \
+            --head "chore/update-org-dependency-management-${TAG}" \
             --base main

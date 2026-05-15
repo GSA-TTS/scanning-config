@@ -1,0 +1,45 @@
+name: Create Signed Commit
+description: >
+  Create a commit with a verified signature via the GitHub Git Data API.
+  Must be run from a working directory that has uncommitted changes (unstaged).
+  Many GSA-TTS repos require signed commits in branch protection rules;
+  commits created with plain 'git commit' in Actions are unsigned.
+
+inputs:
+  repository:
+    description: "Full owner/repo (e.g. GSA-TTS/my-repo)"
+    required: true
+  branch:
+    description: "Branch name to create for the commit"
+    required: true
+  commit-message:
+    description: "Commit message"
+    required: true
+  token:
+    description: "GitHub token with push access to the repository"
+    required: true
+  base-ref:
+    description: "Base branch to build the commit on"
+    required: false
+    default: "main"
+
+outputs:
+  commit-sha:
+    description: "SHA of the created commit"
+    value: ${{ steps.create-commit.outputs.sha }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create signed commit via API
+      id: create-commit
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        COMMIT_SHA=$("${{ github.action_path }}/create-signed-commit.sh" \
+          "${{ inputs.repository }}" \
+          "${{ inputs.branch }}" \
+          "${{ inputs.commit-message }}" \
+          "${{ inputs.base-ref }}")
+        echo "sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
