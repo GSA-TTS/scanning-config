@@ -1,6 +1,7 @@
 name: Create Signed Commit
 description: >
-  Create a commit with a verified signature via the GitHub Git Data API.
+  Create a commit with a verified signature using the GraphQL
+  createCommitOnBranch mutation (GitHub auto-signs these commits).
   Must be run from a working directory that has uncommitted changes (unstaged).
   Many GSA-TTS repos require signed commits in branch protection rules;
   commits created with plain 'git commit' in Actions are unsigned.

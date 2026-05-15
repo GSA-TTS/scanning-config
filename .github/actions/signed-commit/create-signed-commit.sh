@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Create a commit with a verified signature via the GitHub Git Data API.
+# Create a commit with a verified signature using the GraphQL
+# createCommitOnBranch mutation (GitHub auto-signs these commits).
 #
 # Usage: create-signed-commit.sh REPO BRANCH COMMIT_MESSAGE [BASE_REF]
 #
@@ -14,38 +15,54 @@ BRANCH="$2"
 COMMIT_MESSAGE="$3"
 BASE_REF="${4:-main}"
 
+# Get the base commit SHA
 BASE_SHA=$(gh api "/repos/${REPO}/git/ref/heads/${BASE_REF}" --jq '.object.sha')
-BASE_TREE=$(gh api "/repos/${REPO}/git/commits/${BASE_SHA}" --jq '.tree.sha')
 
-TREE_ENTRIES="[]"
-for file in $(git diff --name-only); do
-  BLOB_SHA=$(gh api "/repos/${REPO}/git/blobs" \
-    -f content="$(base64 -w 0 "$file")" \
-    -f encoding="base64" \
-    --jq '.sha')
-  TREE_ENTRIES=$(echo "$TREE_ENTRIES" | jq \
-    --arg path "$file" \
-    --arg sha "$BLOB_SHA" \
-    '. + [{"path": $path, "mode": "100644", "type": "blob", "sha": $sha}]')
-done
-
-NEW_TREE=$(echo "{}" | jq \
-  --arg base "$BASE_TREE" \
-  --argjson tree "$TREE_ENTRIES" \
-  '{base_tree: $base, tree: $tree}' \
-  | gh api "/repos/${REPO}/git/trees" --input - --jq '.sha')
-
-NEW_COMMIT=$(jq -n \
-  --arg message "$COMMIT_MESSAGE" \
-  --arg tree "$NEW_TREE" \
-  --arg parent "$BASE_SHA" \
-  '{message: $message, tree: $tree, parents: [$parent]}' \
-  | gh api "/repos/${REPO}/git/commits" --input - --jq '.sha')
-
+# Create the branch pointing at the base
 gh api "/repos/${REPO}/git/refs" \
   --input <(jq -n \
     --arg ref "refs/heads/${BRANCH}" \
-    --arg sha "$NEW_COMMIT" \
+    --arg sha "$BASE_SHA" \
     '{ref: $ref, sha: $sha}')
 
-echo "$NEW_COMMIT"
+# Build additions array from changed files
+ADDITIONS="[]"
+for file in $(git diff --name-only); do
+  ADDITIONS=$(echo "$ADDITIONS" | jq \
+    --arg path "$file" \
+    --arg contents "$(base64 -w 0 "$file")" \
+    '. + [{"path": $path, "contents": $contents}]')
+done
+
+# Create a signed commit via the GraphQL createCommitOnBranch mutation.
+# Unlike the Git Data REST API, this mutation produces verified signatures.
+QUERY='mutation($input: CreateCommitOnBranchInput!) {
+  createCommitOnBranch(input: $input) {
+    commit { oid }
+  }
+}'
+
+COMMIT_SHA=$(jq -n \
+  --arg query "$QUERY" \
+  --arg repo "$REPO" \
+  --arg branch "$BRANCH" \
+  --arg oid "$BASE_SHA" \
+  --arg message "$COMMIT_MESSAGE" \
+  --argjson additions "$ADDITIONS" \
+  '{
+    query: $query,
+    variables: {
+      input: {
+        branch: {
+          repositoryNameWithOwner: $repo,
+          branchName: $branch
+        },
+        message: { headline: $message },
+        fileChanges: { additions: $additions },
+        expectedHeadOid: $oid
+      }
+    }
+  }' \
+  | gh api -X POST /graphql --input - --jq '.data.createCommitOnBranch.commit.oid')
+
+echo "$COMMIT_SHA"
