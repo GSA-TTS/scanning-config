@@ -54,7 +54,10 @@ Your repo's `renovate.json` can override any [Renovate setting](https://docs.ren
 
 ```json
 {
-  "extends": ["local>GSA-TTS/scanning-service"],
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "local>GSA-TTS/scanning-service:default.json5"
+  ],
   "schedule": ["before 7am on Monday"],
   "packageRules": [
     {
