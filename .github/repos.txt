@@ -12,6 +12,7 @@ GSA-TTS/spiffworkflow-connector
 
 # cg-contributors repos
 GSA-TTS/terraform-cloudgov
+GSA-TTS/cg-egress-proxy
 
 # search.gov team repos
 GSA-TTS/searchgov-spider
